@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UnidadePadrao {
+  kg
+  saco
+  unidade
+  caixa
+}
+
+enum CategoriaDespesa {
+  sementes
+  adubo
+  defensivo
+  combustivel
+  mao_de_obra
+  manutencao
+  outros
+}
+
+enum CanalVenda {
+  feira
+  atravessador
+  cooperativa
+  outros
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  nome         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  propriedades Propriedade[]
+  culturas     Cultura[]
+  safras       Safra[]
+  despesas     Despesa[]
+  vendas       Venda[]
+}
+
+model Propriedade {
+  id              String   @id
+  userId          String
+  nomePropriedade String
+  nomeProdutor    String
+  criadoEm        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Cultura {
+  id            String        @id
+  userId        String
+  nome          String
+  unidadePadrao UnidadePadrao
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  safras Safra[]
+  vendas Venda[]
+
+  @@index([userId])
+}
+
+model Safra {
+  id          String   @id
+  userId      String
+  culturaId   String
+  dataInicio  String
+  dataFim     String?
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cultura Cultura @relation(fields: [culturaId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([userId, culturaId])
+}
+
+model Despesa {
+  id        String           @id
+  userId    String
+  data      String
+  categoria CategoriaDespesa
+  descricao String
+  valor     Float
+  culturaId String?
+  safraId   String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, data])
+}
+
+model Venda {
+  id         String     @id
+  userId     String
+  data       String
+  culturaId  String
+  quantidade Float
+  unidade    String
+  valorTotal Float
+  canal      CanalVenda
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cultura Cultura @relation(fields: [culturaId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([userId, data])
+  @@index([userId, culturaId])
+}
