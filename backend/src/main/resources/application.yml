@@ -1,0 +1,42 @@
+server:
+  address: ${HOST:127.0.0.1}
+  port: ${PORT:4000}
+
+app:
+  jwt-secret: ${JWT_SECRET:troque-este-segredo-min-16-chars}
+  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:8080}
+
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:sqlite:./dev.db}
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.community.dialect.SQLiteDialect
+        format_sql: true
+    open-in-view: false
+
+---
+# Perfil opcional: MySQL local ou em servidor
+# Uso: SPRING_PROFILES_ACTIVE=mysql
+# ou: mvn spring-boot:run -Dspring-boot.run.profiles=mysql
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/agro_sara?charset=utf8mb4&serverTimezone=America/Sao_Paulo}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    open-in-view: false

@@ -1,12 +1,20 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { Sprout, Download, Settings, Leaf } from "lucide-react";
+import { Package, Sprout, Target, Calculator, Download, Settings } from "lucide-react";
 
 /** "Mais" page – mobile catch-all for items not in bottom nav */
 export default function Mais() {
   const items = [
+    { to: "/metas", icon: Target, label: "Metas", desc: "Faturamento, gastos e quantidade por cultura ou safra" },
+    {
+      to: "/simulacao-lucro",
+      icon: Calculator,
+      label: "Simulação de lucro",
+      desc: "Receita, custo e preço mínimo sem prejuízo",
+    },
+    { to: "/insumos", icon: Package, label: "Estoque de insumos", desc: "Cadastro e alertas de baixo estoque" },
     { to: "/safras", icon: Sprout, label: "Safras", desc: "Gerencie períodos de plantio" },
-    { to: "/exportar", icon: Download, label: "Exportar / Backup", desc: "CSV e backup dos dados" },
+    { to: "/exportar", icon: Download, label: "Relatórios e backup", desc: "CSV, relatórios e backup completo" },
     { to: "/configuracoes", icon: Settings, label: "Configurações", desc: "Dados da propriedade" },
   ];
 

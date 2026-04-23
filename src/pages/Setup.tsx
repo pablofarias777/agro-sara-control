@@ -1,25 +1,27 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { savePropriedade, genId } from "@/db/database";
+import { savePropriedade } from "@/infra/storage";
+import { STORAGE_KEY_PROPRIEDADE_ATIVA } from "@/lib/propriedadeAtiva";
+import { createId } from "@/lib/id";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sprout } from "lucide-react";
 
 export default function Setup() {
-  const navigate = useNavigate();
   const [nomePropriedade, setNomePropriedade] = useState("");
   const [nomeProdutor, setNomeProdutor] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nomePropriedade.trim() || !nomeProdutor.trim()) return;
+    const id = createId();
     await savePropriedade({
-      id: genId(),
+      id,
       nomePropriedade: nomePropriedade.trim(),
       nomeProdutor: nomeProdutor.trim(),
       criadoEm: new Date().toISOString().slice(0, 10),
     });
+    localStorage.setItem(STORAGE_KEY_PROPRIEDADE_ATIVA, id);
     window.location.href = "/";
   };
 
@@ -31,9 +33,7 @@ export default function Setup() {
             <Sprout className="h-8 w-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold">AgroGestão Simples</h1>
-          <p className="text-center text-sm text-muted-foreground">
-            Controle financeiro para sua propriedade rural
-          </p>
+          <p className="text-center text-sm text-muted-foreground">Controle financeiro para sua propriedade rural</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

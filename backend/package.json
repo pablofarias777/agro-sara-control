@@ -10,7 +10,8 @@
     "prisma": "prisma",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
-    "migrate:deploy": "prisma migrate deploy"
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:sqlite-to-mysql": "tsx scripts/sqlite-to-mysql.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.1.0",
@@ -23,7 +24,9 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.16.5",
+    "better-sqlite3": "^11.10.0",
     "prisma": "^6.16.0",
     "tsx": "^4.20.5",
     "typescript": "^5.8.3"
