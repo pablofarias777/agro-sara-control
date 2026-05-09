@@ -9,6 +9,7 @@ import {
 } from "@/domain/comparisons";
 import Layout from "@/components/Layout";
 import { Link } from "react-router-dom";
+import { ROUTES } from "@/app/paths";
 import {
   getDespesasByPropriedade,
   getVendasByPropriedade,
@@ -644,7 +645,7 @@ export default function Dashboard() {
               <Target className="h-5 w-5 text-primary shrink-0" />
               <h2 className="text-base font-semibold">Metas</h2>
             </div>
-            <Link to="/metas" className="text-xs font-medium text-primary hover:underline shrink-0">
+            <Link to={ROUTES.metas} className="text-xs font-medium text-primary hover:underline shrink-0">
               Gerenciar
             </Link>
           </div>

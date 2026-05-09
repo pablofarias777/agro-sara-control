@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sprout } from "lucide-react";
+import { ROUTES } from "@/app/paths";
 
 export default function Register() {
   const { register } = useAuth();
@@ -25,7 +26,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(email.trim(), password, nome.trim() || undefined);
-      navigate("/setup", { replace: true });
+      navigate(ROUTES.setup, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível cadastrar.");
     } finally {
@@ -90,7 +91,7 @@ export default function Register() {
 
         <p className="text-center text-sm text-muted-foreground">
           Já tem conta?{" "}
-          <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+          <Link to={ROUTES.login} className="font-medium text-primary underline-offset-4 hover:underline">
             Entrar
           </Link>
         </p>

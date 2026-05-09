@@ -12,18 +12,19 @@ import {
   Settings,
 } from "lucide-react";
 import { PropriedadeSwitcher } from "@/components/PropriedadeSwitcher";
+import { ROUTES } from "@/app/paths";
 
 const sideItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/culturas", icon: Leaf, label: "Culturas" },
-  { to: "/insumos", icon: Package, label: "Insumos" },
-  { to: "/safras", icon: Sprout, label: "Safras" },
-  { to: "/despesas", icon: DollarSign, label: "Despesas" },
-  { to: "/vendas", icon: ShoppingCart, label: "Vendas" },
-  { to: "/metas", icon: Target, label: "Metas" },
-  { to: "/simulacao-lucro", icon: Calculator, label: "Simulação" },
-  { to: "/exportar", icon: Download, label: "Relatórios" },
-  { to: "/configuracoes", icon: Settings, label: "Configurações" },
+  { to: ROUTES.root, icon: LayoutDashboard, label: "Dashboard" },
+  { to: ROUTES.culturas, icon: Leaf, label: "Culturas" },
+  { to: ROUTES.insumos, icon: Package, label: "Insumos" },
+  { to: ROUTES.safras, icon: Sprout, label: "Safras" },
+  { to: ROUTES.despesas, icon: DollarSign, label: "Despesas" },
+  { to: ROUTES.vendas, icon: ShoppingCart, label: "Vendas" },
+  { to: ROUTES.metas, icon: Target, label: "Metas" },
+  { to: ROUTES.simulacaoLucro, icon: Calculator, label: "Simulação" },
+  { to: ROUTES.exportar, icon: Download, label: "Relatórios" },
+  { to: ROUTES.configuracoes, icon: Settings, label: "Configurações" },
 ];
 
 export default function Sidebar() {
@@ -40,7 +41,7 @@ export default function Sidebar() {
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
         {sideItems.map(({ to, icon: Icon, label }) => {
-          const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          const active = to === ROUTES.root ? pathname === ROUTES.root : pathname.startsWith(to);
           return (
             <Link
               key={to}

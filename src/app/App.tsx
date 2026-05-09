@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PropriedadeProvider, usePropriedade } from "@/contexts/PropriedadeContext";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import { FALLBACK_PATH, ROUTES } from "./paths";
 import { AppRoutes } from "./routes";
 
 function LoadingScreen() {
@@ -18,9 +19,9 @@ function LoadingScreen() {
 
 function UnauthenticatedRoutes() {
   return useRoutes([
-    { path: "/login", element: <Login /> },
-    { path: "/register", element: <Register /> },
-    { path: "*", element: <Navigate to="/login" replace /> },
+    { path: ROUTES.login, element: <Login /> },
+    { path: ROUTES.register, element: <Register /> },
+    { path: FALLBACK_PATH, element: <Navigate to={ROUTES.login} replace /> },
   ]);
 }
 

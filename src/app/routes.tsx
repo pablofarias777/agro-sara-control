@@ -13,29 +13,30 @@ import SimulacaoLucro from "@/pages/SimulacaoLucro";
 import Configuracoes from "@/pages/Configuracoes";
 import Mais from "@/pages/Mais";
 import NotFound from "@/pages/NotFound";
+import { FALLBACK_PATH, ROUTES } from "./paths";
 
 export function AppRoutes({ hasSetup }: { hasSetup: boolean }) {
   const routeObjects = useMemo(
     () =>
       hasSetup
         ? [
-            { path: "/", element: <Dashboard /> },
-            { path: "/culturas", element: <Culturas /> },
-            { path: "/insumos", element: <Insumos /> },
-            { path: "/safras", element: <Safras /> },
-            { path: "/despesas", element: <Despesas /> },
-            { path: "/vendas", element: <Vendas /> },
-            { path: "/metas", element: <Metas /> },
-            { path: "/simulacao-lucro", element: <SimulacaoLucro /> },
-            { path: "/exportar", element: <Exportar /> },
-            { path: "/configuracoes", element: <Configuracoes /> },
-            { path: "/mais", element: <Mais /> },
-            { path: "/setup", element: <Navigate to="/" replace /> },
-            { path: "*", element: <NotFound /> },
+            { path: ROUTES.root, element: <Dashboard /> },
+            { path: ROUTES.culturas, element: <Culturas /> },
+            { path: ROUTES.insumos, element: <Insumos /> },
+            { path: ROUTES.safras, element: <Safras /> },
+            { path: ROUTES.despesas, element: <Despesas /> },
+            { path: ROUTES.vendas, element: <Vendas /> },
+            { path: ROUTES.metas, element: <Metas /> },
+            { path: ROUTES.simulacaoLucro, element: <SimulacaoLucro /> },
+            { path: ROUTES.exportar, element: <Exportar /> },
+            { path: ROUTES.configuracoes, element: <Configuracoes /> },
+            { path: ROUTES.mais, element: <Mais /> },
+            { path: ROUTES.setup, element: <Navigate to={ROUTES.root} replace /> },
+            { path: FALLBACK_PATH, element: <NotFound /> },
           ]
         : [
-            { path: "/setup", element: <Setup /> },
-            { path: "*", element: <Navigate to="/setup" replace /> },
+            { path: ROUTES.setup, element: <Setup /> },
+            { path: FALLBACK_PATH, element: <Navigate to={ROUTES.setup} replace /> },
           ],
     [hasSetup]
   );
