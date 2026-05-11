@@ -7,9 +7,14 @@ import {
   getVendasByPropriedade,
   getCulturasByPropriedade,
   getSafrasByPropriedade,
+  saveCultura,
+  saveSafra,
+  saveInsumo,
+  saveDespesa,
 } from "@/infra/storage";
 import { usePropriedade } from "@/contexts/PropriedadeContext";
 import { downloadFile } from "@/lib/csv";
+import { parseTabularFile } from "@/lib/tabularImport";
 import { CATEGORIA_LABELS, CANAL_LABELS, CENTRO_CUSTO_LABELS } from "@/domain/labels";
 import {
   getCentroCustoEfetivo,
@@ -37,6 +42,8 @@ import {
   Database,
 } from "lucide-react";
 import { toast } from "sonner";
+import { createId } from "@/lib/id";
+import type { CategoriaDespesa, CentroCustoDespesa, CategoriaInsumo, Cultura, UnidadeInsumo } from "@/domain/types";
 
 function fileSuffixPeriodo(inicio: string, fim: string): string {
   return `${inicio}_a_${fim}`;
@@ -45,6 +52,8 @@ function fileSuffixPeriodo(inicio: string, fim: string): string {
 export default function Exportar() {
   const { propriedadeAtivaId, ready, propriedadeAtiva } = usePropriedade();
   const fileRef = useRef<HTMLInputElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importTarget, setImportTarget] = useState<"culturas" | "safras" | "insumos" | "despesas" | null>(null);
   const [dataInicio, setDataInicio] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 12);
@@ -439,6 +448,203 @@ export default function Exportar() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const norm = (v: string | undefined) =>
+    (v ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  const toNum = (v: string | undefined) => Number((v ?? "").replace(/\./g, "").replace(",", ".").trim());
+  const toDate = (v: string | undefined) => {
+    const s = (v ?? "").trim();
+    if (!s) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    return "";
+  };
+
+  const mapCategoriaDespesa = (value: string): CategoriaDespesa | null => {
+    const v = norm(value);
+    const map: Record<string, CategoriaDespesa> = {
+      sementes: "sementes",
+      adubo: "adubo",
+      defensivo: "defensivo",
+      combustivel: "combustivel",
+      "mao de obra": "mao_de_obra",
+      mao_de_obra: "mao_de_obra",
+      manutencao: "manutencao",
+      outros: "outros",
+    };
+    return map[v] ?? null;
+  };
+
+  const mapCentroCusto = (value: string): CentroCustoDespesa | undefined => {
+    const v = norm(value);
+    const map: Record<string, CentroCustoDespesa> = {
+      plantio: "plantio",
+      irrigacao: "irrigacao",
+      "mao de obra": "mao_de_obra",
+      mao_de_obra: "mao_de_obra",
+      transporte: "transporte",
+      insumos: "insumos",
+      manutencao: "manutencao",
+    };
+    return map[v];
+  };
+
+  const mapCategoriaInsumo = (value: string): CategoriaInsumo | null => {
+    const v = norm(value);
+    const map: Record<string, CategoriaInsumo> = {
+      sementes: "sementes",
+      fertilizantes: "fertilizantes",
+      fertilizante: "fertilizantes",
+      adubo: "fertilizantes",
+      defensivos: "defensivos",
+      defensivo: "defensivos",
+      combustivel: "combustivel",
+      ferramentas: "ferramentas",
+      embalagens: "embalagens",
+      outros: "outros",
+    };
+    return map[v] ?? null;
+  };
+
+  const mapUnidadeInsumo = (value: string): UnidadeInsumo | null => {
+    const v = (value ?? "").trim();
+    const low = norm(value);
+    const map: Record<string, UnidadeInsumo> = {
+      kg: "kg",
+      l: "L",
+      ml: "ml",
+      unidade: "unidade",
+      saco: "saco",
+      tonelada: "tonelada",
+      ha: "ha",
+    };
+    if (v === "L") return "L";
+    return map[low] ?? null;
+  };
+
+  const startImport = (target: "culturas" | "safras" | "insumos" | "despesas") => {
+    setImportTarget(target);
+    importRef.current?.click();
+  };
+
+  const importByTarget = async (rows: Record<string, string>[]) => {
+    if (!propriedadeAtivaId || !importTarget) return;
+    const culturas = await getCulturasByPropriedade(propriedadeAtivaId);
+    const culturaByNome = new Map(culturas.map((c) => [norm(c.nome), c]));
+    const culturaById = new Map(culturas.map((c) => [c.id, c]));
+    const safras = await getSafrasByPropriedade(propriedadeAtivaId);
+    const safraById = new Map(safras.map((s) => [s.id, s]));
+
+    let ok = 0;
+    let fail = 0;
+
+    for (const row of rows) {
+      try {
+        if (importTarget === "culturas") {
+          const nome = (row.nome ?? "").trim();
+          const unidade = norm(row.unidadepadrao || row.unidade);
+          const unidadePadrao: Cultura["unidadePadrao"] | null =
+            unidade === "kg" || unidade === "saco" || unidade === "unidade" || unidade === "caixa"
+              ? (unidade as Cultura["unidadePadrao"])
+              : null;
+          if (!nome || !unidadePadrao) throw new Error("Linha inválida de cultura.");
+          await saveCultura({
+            id: row.id?.trim() || createId(),
+            propriedadeId: propriedadeAtivaId,
+            nome,
+            unidadePadrao,
+          });
+        }
+
+        if (importTarget === "safras") {
+          const culturaId = row.culturaid?.trim() || culturaByNome.get(norm(row.cultura || row.culturanome))?.id;
+          const dataInicio = toDate(row.datainicio || row.inicio);
+          const dataFim = toDate(row.datafim || row.fim) || undefined;
+          const observacoes = (row.observacoes ?? row.observacao ?? "").trim() || undefined;
+          if (!culturaId || !dataInicio) throw new Error("Linha inválida de safra.");
+          await saveSafra({
+            id: row.id?.trim() || createId(),
+            propriedadeId: propriedadeAtivaId,
+            culturaId,
+            dataInicio,
+            dataFim,
+            observacoes,
+          });
+        }
+
+        if (importTarget === "insumos") {
+          const nome = (row.nome ?? "").trim();
+          const categoria = mapCategoriaInsumo(row.categoria ?? "");
+          const unidade = mapUnidadeInsumo(row.unidade ?? "");
+          const quantidadeAtual = toNum(row.quantidadeatual || row.quantidade);
+          const alertaEstoqueBaixo = toNum(row.alertaestoquebaixo || row.alerta);
+          if (!nome || !categoria || !unidade || Number.isNaN(quantidadeAtual) || Number.isNaN(alertaEstoqueBaixo)) {
+            throw new Error("Linha inválida de insumo.");
+          }
+          await saveInsumo({
+            id: row.id?.trim() || createId(),
+            nome,
+            categoria,
+            unidade,
+            quantidadeAtual,
+            alertaEstoqueBaixo,
+          });
+        }
+
+        if (importTarget === "despesas") {
+          const data = toDate(row.data);
+          const categoria = mapCategoriaDespesa(row.categoria ?? "");
+          const descricao = (row.descricao ?? "").trim();
+          const valor = toNum(row.valor);
+          const culturaId = row.culturaid?.trim() || culturaByNome.get(norm(row.cultura || row.culturanome))?.id;
+          const safraId = row.safraid?.trim();
+          const centroCusto = mapCentroCusto(row.centrocusto || row.centro);
+          if (!data || !categoria || !descricao || Number.isNaN(valor)) throw new Error("Linha inválida de despesa.");
+          if (culturaId && !culturaById.has(culturaId)) throw new Error("Cultura não encontrada.");
+          if (safraId && !safraById.has(safraId)) throw new Error("Safra não encontrada.");
+          await saveDespesa({
+            id: row.id?.trim() || createId(),
+            propriedadeId: propriedadeAtivaId,
+            data,
+            categoria,
+            centroCusto,
+            descricao,
+            valor,
+            culturaId,
+            safraId: safraId || undefined,
+          });
+        }
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    toast.success(`Importação concluída (${ok} sucesso${fail > 0 ? `, ${fail} falha(s)` : ""}).`);
+  };
+
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !importTarget) return;
+    try {
+      const rows = await parseTabularFile(file);
+      if (rows.length === 0) {
+        toast.error("Arquivo vazio ou sem linhas válidas.");
+        return;
+      }
+      await importByTarget(rows);
+      window.location.reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao importar arquivo.");
+    } finally {
+      if (importRef.current) importRef.current.value = "";
+      setImportTarget(null);
+    }
+  };
+
   if (!ready || !propriedadeAtivaId) {
     return (
       <Layout title="Exportar e relatórios">
@@ -573,6 +779,32 @@ export default function Exportar() {
             </Button>
           </div>
           <input ref={fileRef} type="file" accept=".json" onChange={importBackup} className="hidden" />
+        </section>
+
+        <section className="space-y-3 pt-2 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Upload className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Importar dados por área (CSV/XLSX)</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Importe registros já existentes para culturas, safras, insumos e despesas. Use o cabeçalho com nomes como
+            `nome`, `categoria`, `data`, `valor`, `culturaId` ou `cultura`.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button variant="outline" className="h-12 justify-start gap-3 text-base" onClick={() => startImport("culturas")}>
+              <Upload className="h-5 w-5" /> Importar culturas
+            </Button>
+            <Button variant="outline" className="h-12 justify-start gap-3 text-base" onClick={() => startImport("safras")}>
+              <Upload className="h-5 w-5" /> Importar safras
+            </Button>
+            <Button variant="outline" className="h-12 justify-start gap-3 text-base" onClick={() => startImport("insumos")}>
+              <Upload className="h-5 w-5" /> Importar insumos
+            </Button>
+            <Button variant="outline" className="h-12 justify-start gap-3 text-base" onClick={() => startImport("despesas")}>
+              <Upload className="h-5 w-5" /> Importar despesas
+            </Button>
+          </div>
+          <input ref={importRef} type="file" accept=".csv,.xlsx,.xls" onChange={onImportFile} className="hidden" />
         </section>
       </div>
     </Layout>
