@@ -37,9 +37,6 @@ export default function Login() {
             <Sprout className="h-8 w-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold">Entrar</h1>
-          <p className="text-center text-sm text-muted-foreground">
-            Use os dados cadastrados no servidor (MySQL).
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
